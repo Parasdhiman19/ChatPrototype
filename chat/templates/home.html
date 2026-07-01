@@ -290,6 +290,8 @@
 
     <script>
         lucide.createIcons();
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+
 
         function toggleModal(modalId, show) {
             document.getElementById(modalId).style.display = show ? 'flex' : 'none';
@@ -404,8 +406,9 @@
 
         // Home page WebSocket
 const homeSocket = new WebSocket(
-    `ws://${window.location.host}/ws/home/`
+    `${protocol}://${window.location.host}/ws/home/`
 );
+
 
 homeSocket.onmessage = function (e) {
     const data = JSON.parse(e.data);

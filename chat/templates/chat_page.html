@@ -101,6 +101,7 @@
     {{ partner_id|json_script:"partner-id" }}
 
     <script>
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
         const partnerId = JSON.parse(document.getElementById('partner-id').textContent);
         const chatLog = document.querySelector('#chat-log');
         const usernameDisplay = document.getElementById('partner-name').textContent.trim();
@@ -108,8 +109,8 @@
         const sendButton = document.querySelector('#chat-message-submit');
 
         const chatSocket = new WebSocket(
-            'ws://' + window.location.host + '/ws/chat/' + partnerId + '/'
-        );
+    `${protocol}://${window.location.host}/ws/chat/${partnerId}/`
+);
 
         function appendMessage(sender, text, rawTimestamp = "") {
             const wrapper = document.createElement('div');
