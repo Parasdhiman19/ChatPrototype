@@ -52,7 +52,12 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.environ["REDIS_URL"]], 
+            "hosts": [{
+                "address": "redis://default:XPmEG3mXBwUCrR8gV7UN3NdvKxwVqOJT@library-acoustic-wattle-69730.db.redis.io:19246",
+                "socket_timeout": 30,
+                "socket_connect_timeout": 30,
+                "retry_on_timeout": True
+            }],
         },
     },
 }
