@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chat App - Home</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            background-color: #f0f2f5;
+            overflow: hidden;
+        }
+
+        /* Desktop Sidebar Setup */
+        .sidebar {
+            width: 30%;
+            min-width: 280px;
+            max-width: 380px;
+            border-right: 1px solid #e1e4e8;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            height: 100%;
+        }
+
+        .sidebar-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 16px;
+            background: #f0f2f5;
+            border-bottom: 1px solid #e1e4e8;
+        }
+
+        .sidebar-header h2 {
+            margin: 0; 
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #111b21;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 16px;
+            color: #54656f;
+        }
+
+        .icon-btn {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .icon-btn:hover {
+            color: #111b21;
+        }
+
+        .search-container {
+            padding: 8px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: #f0f2f5;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .search-input:focus {
+            background: #ffffff;
+            border-color: #00a884;
+        }
+
+        .user-list {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .user-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: #111b21;
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+        .user-link:hover {
+            background: #f0f2f5;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #00a884;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .user-details {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .username {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .status-meta {
+            font-size: 0.8rem;
+            color: #667781;
+        }
+
+        /* Desktop Right Side View Container */
+        .chat-view-container {
+            flex-grow: 1;
+            height: 100%;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        .chat-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Modals Layout Rules */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .close-btn {
+            cursor: pointer;
+            color: #667781;
+        }
+
+        .modal-body {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .logout-form {
+            margin-top: 20px;
+            border-top: 1px solid #e1e4e8;
+            padding-top: 16px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: #b91c1c;
+        }
+
+        /* ==========================================================
+           RESPONSIVE CODE: MOBILE & TABLET RULES (WhatsApp Mode)
+           ========================================================== */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;      /* Sidebar takes up the whole screen */
+                max-width: 100%;
+                border-right: none;
+            }
+
+            .chat-view-container {
+                display: none;    /* Completely hide the desktop iframe workspace */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Chats</h2>
+            <div class="header-actions">
+                <i data-lucide="message-square-plus" class="icon-btn" onclick="toggleModal('newChatModal', true)"></i>
+                <i data-lucide="settings" class="icon-btn" onclick="toggleModal('settingsModal', true)"></i>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="sidebar-search" class="search-input" placeholder="Search active chats...">
+        </div>
+
+        <div class="user-list" id="chat-user-list">
+          
+        </div>
+    </div>
+
+    <div class="chat-view-container">
+        <iframe name="chat-window" class="chat-frame" srcdoc="<div style='display:flex; justify-content:center; align-items:center; height:100vh; color:#888; font-family:sans-serif;'>Select a user from the sidebar to start chatting.</div>"></iframe>
+    </div>
+
+    <div id="newChatModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Find Someone New</h3>
+                <i data-lucide="x" class="close-btn" onclick="toggleModal('newChatModal', false)"></i>
+            </div>
+            <div class="search-container" style="padding: 0 0 12px 0;">
+                <input type="text" id="modal-search" class="search-input" placeholder="Type a username...">
+            </div>
+            <div class="modal-body" id="all-users-list">
+                <p id="search-placeholder" style="color: #888; font-size: 0.9rem; padding: 10px; text-align: center;">Type a name to query the database...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <i data-lucide="x" class="close-btn" onclick="toggleModal('settingsModal', false)"></i>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+                <div class="user-avatar" style="width: 50px; height: 50px; font-size: 1.3rem;">{{ request.user.username|slice:":1" }}</div>
+                <div>
+                    <h4 style="margin: 0; font-size: 1.1rem;">{{ request.user.username }}</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #667781;">Active profile session</p>
+                </div>
+            </div>
+            <form action="{% url 'logout' %}" method="post" class="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">Log Out</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function toggleModal(modalId, show) {
+            document.getElementById(modalId).style.display = show ? 'flex' : 'none';
+            if (modalId === 'newChatModal' && show) {
+                document.getElementById('modal-search').value = '';
+                document.getElementById('all-users-list').innerHTML = '<p style="color: #888; font-size: 0.9rem; padding: 10px; text-align: center;">Type a name to query the database...</p>';
+                document.getElementById('modal-search').focus();
+            }
+        }
+
+        // Helper function to force fullscreen page navigation on mobile view screens
+        function handleMobileNavigation() {
+            const isMobile = window.innerWidth <= 768;
+            
+            // Handle links in the main sidebar list
+            document.querySelectorAll('.chat-trigger').forEach(link => {
+                if (isMobile) {
+                    link.removeAttribute('target'); // Opens on a completely fresh window view
+                } else {
+                    link.setAttribute('target', 'chat-window'); // Opens in desktop side panel iframe
+                }
+            });
+        }
+
+        // Run navigation checks on boot up and resize layout actions
+        window.addEventListener('load', handleMobileNavigation);
+        window.addEventListener('resize', handleMobileNavigation);
+
+        // Sidebar Client Filter Logic
+        document.getElementById('sidebar-search').addEventListener('input', function(e) {
+            const val = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('#chat-user-list .user-link').forEach(link => {
+                const text = link.querySelector('.username').textContent.toLowerCase();
+                link.style.display = text.includes(val) ? 'flex' : 'none';
+            });
+        });
+
+        // AJAX API Database User Search Loop
+        document.getElementById('modal-search').addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            const resultsContainer = document.getElementById('all-users-list');
+            
+            if (query.length === 0) {
+                resultsContainer.innerHTML = '<p style="color: #888; font-size: 0.9rem; padding: 10px; text-align: center;">Type a name to query the database...</p>';
+                return;
+            }
+
+            fetch(`/api/search-users/?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    resultsContainer.innerHTML = ''; 
+                    const isMobile = window.innerWidth <= 768;
+                    
+                    if (data.users.length === 0) {
+                        resultsContainer.innerHTML = '<p style="color: #888; font-size: 0.9rem; padding: 10px; text-align: center;">No matching users found.</p>';
+                        return;
+                    }
+
+                    data.users.forEach(user => {
+                        const userRow = document.createElement('a');
+                        userRow.href = `/chat/${user.id}/`; 
+                        userRow.className = 'user-link chat-trigger';
+                        
+                        // Enforce target state dynamically depending on responsive width metrics
+                        if (!isMobile) {
+                            userRow.target = 'chat-window';
+                        }
+                        
+                        userRow.onclick = function() { toggleModal('newChatModal', false); };
+
+                        userRow.innerHTML = `
+                            <div class="user-avatar" style="background: #54656f;">${user.username.charAt(0).toUpperCase()}</div>
+                            <div class="user-details">
+                                <span class="username">${user.username}</span>
+                            </div>
+                        `;
+                        resultsContainer.appendChild(userRow);
+                    });
+                })
+                .catch(err => console.error("Search query error:", err));
+        });
+
+        // Intercept iframe events to rearrange sidebar listing
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'NEW_MESSAGE') {
+                const pId = event.data.partnerId;
+                const pName = event.data.partnerName;
+                const userListContainer = document.getElementById('chat-user-list');
+                
+                let existingUserRow = userListContainer.querySelector(`a[href*="/chat/${pId}/"]`);
+                
+                if (existingUserRow) {
+                    userListContainer.prepend(existingUserRow);
+                } else {
+                    const newRow = document.createElement('a');
+                    newRow.href = `/chat/${pId}/`;
+                    newRow.className = 'user-link chat-trigger';
+                    if (window.innerWidth > 768) { newRow.target = 'chat-window'; }
+                    
+                    newRow.innerHTML = `
+                        <div class="user-avatar">${pName.charAt(0).toUpperCase()}</div>
+                        <div class="user-details">
+                            <span class="username">${pName}</span>
+                            <div class="status-meta">Active conversation</div>
+                        </div>
+                    `;
+                    if(userListContainer.querySelector('p')) { userListContainer.innerHTML = ''; }
+                    userListContainer.prepend(newRow);
+                }
+            }
+        });
+
+        // Home page WebSocket
+const homeSocket = new WebSocket(
+    `ws://${window.location.host}/ws/home/`
+);
+
+homeSocket.onmessage = function (e) {
+    const data = JSON.parse(e.data);
+
+    if (data.type === "sidebar_update") {
+
+        const userListContainer = document.getElementById("chat-user-list");
+
+        // Clear the sidebar
+        userListContainer.innerHTML = "";
+
+        // Add every user received from Django
+        data.users.forEach(user => {
+
+            const row = document.createElement("a");
+
+            row.href = `/chat/${user.id}/`;
+            row.className = "user-link chat-trigger";
+
+            if (window.innerWidth > 768) {
+                row.target = "chat-window";
+            }
+
+            row.innerHTML = `
+                <div class="user-avatar">
+                    ${user.username.charAt(0).toUpperCase()}
+                </div>
+
+                <div class="user-details">
+                    <span class="username">${user.username}</span>
+                    <div class="status-meta">Active conversation</div>
+                </div>
+            `;
+
+            userListContainer.appendChild(row);
+        });
+    }
+};
+    </script>
+</body>
+</html>

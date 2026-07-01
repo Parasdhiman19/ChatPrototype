@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #f0f2f5; 
+        }
+
+        .chat-header {
+            background: #f0f2f5;
+            padding: 15px;
+            border-bottom: 1px solid #ccc;
+            font-weight: bold;
+        }
+
+        #chat-log {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+        }
+
+        .partner {
+            background: #ffffff;
+            align-self: flex-start;
+            border: 1px solid #ddd;
+        }
+
+        .me {
+            background: #d9fdd3;
+            align-self: flex-end;
+        }
+
+        .time {
+            font-size: 0.75rem;
+            color: #777;
+            margin-left: 8px;
+        }
+
+        .chat-footer {
+            background: #f0f2f5;
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #ccc;
+        }
+
+        #chat-message-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        #chat-message-submit {
+            padding: 10px 20px;
+            background: #00a884;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        #chat-message-submit:hover {
+            background: #008f72;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-header">
+        Chatting with: <span id="partner-name">{{ chat_partner }}</span>
+    </div>
+
+    <div id="chat-log"></div>
+
+    <div class="chat-footer">
+        <input id="chat-message-input" type="text" placeholder="Type a message..." autofocus>
+        <button id="chat-message-submit">Send</button>
+    </div>
+
+    {{ partner_id|json_script:"partner-id" }}
+
+    <script>
+        const partnerId = JSON.parse(document.getElementById('partner-id').textContent);
+        const chatLog = document.querySelector('#chat-log');
+        const usernameDisplay = document.getElementById('partner-name').textContent.trim();
+        const messageInput = document.querySelector('#chat-message-input');
+        const sendButton = document.querySelector('#chat-message-submit');
+
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/' + partnerId + '/'
+        );
+
+        function appendMessage(sender, text, rawTimestamp = "") {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message');
+            
+            if (sender.toLowerCase() === usernameDisplay.toLowerCase()) {
+                wrapper.classList.add('partner');
+            } else {
+                wrapper.classList.add('me');
+            }
+            
+            let dateObj = rawTimestamp ? new Date(rawTimestamp) : new Date();
+            if (isNaN(dateObj.getTime())) { dateObj = new Date(); }
+            let displayTime = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+            
+            wrapper.innerHTML = `${text} <span class="time">${displayTime}</span>`;
+            
+            chatLog.appendChild(wrapper);
+            chatLog.scrollTop = chatLog.scrollHeight; 
+
+            // Cross-window payload communication notification event to parent shell window
+            window.parent.postMessage({
+                type: 'NEW_MESSAGE',
+                partnerId: partnerId,
+                partnerName: usernameDisplay
+            }, '*');
+        }
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+
+            if (data.type === 'history') {
+                chatLog.innerHTML = ''; 
+                data.messages.forEach(msg => {
+                    appendMessage(msg.sender, msg.message, msg.timestamp);
+                });
+            } 
+            else if (data.type === 'chat') {
+                appendMessage(data.sender, data.message, data.timestamp);
+            }
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat connection severed unexpectedly.');
+        };
+
+        messageInput.onkeyup = function(e) {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        };
+
+        sendButton.onclick = function(e) {
+            const message = messageInput.value;
+            
+            if (message.trim() !== "") {
+                chatSocket.send(JSON.stringify({
+                    'message': message
+                }));
+                messageInput.value = '';
+            }
+        };
+    </script>
+</body>
+</html>
